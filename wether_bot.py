@@ -5,7 +5,7 @@ import requests
 import telebot
 from dotenv import load_dotenv
 import exceptions
-from message import HI_MESSAGE, WEATHER_EMOJIS, DIRECTIONS_WIND
+from constants import HI_MESSAGE, WEATHER_EMOJIS, DIRECTIONS_WIND, URL_GEO, URL_WEATHER
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -46,7 +46,19 @@ def wind_direction(weather_data):
 
 def check_availible_api():
     """Функция проверки доступности API."""
-    pass
+    try:
+        URL = 'http://api.openweathermap.org/'
+        response = requests.get(URL)
+        if response.status_code != HTTPStatus.OK:
+            message_error = f'Возникла ошибка: {response.status_code}'
+            logging.error(message_error)
+            raise exceptions.RequestResponseError(message_error)
+        else:
+            response = response.json()
+            return response
+    except Exception as error:
+        logging.error(f'Ошибка доступности API {error}')
+        raise exceptions.RequestResponseError(error)
 
 @bot.message_handler(commands=['start'])
 def say_hello(message):
@@ -68,43 +80,54 @@ def find_city(message):
 
 def find_geo(message, text_message):
     """Функция получения долготы и широты города из текста пользователя."""
-    URL = (f'http://api.openweathermap.org/geo/1.0/direct?q={text_message}'
-           f'&appid={API_TOKEN}')
-    response = requests.get(URL).json()
-    lat = response[0]['lat']
-    lon = response[0]['lon']
-    print(lat, lon)
-    find_weather(message, lat, lon)
+    try:
+        url = URL_GEO.format(text_message=text_message, API_TOKEN=API_TOKEN)
+        response = requests.get(url).json()
+        if not response:
+            bot.send_message(message.chat.id,
+                             f'К сожалению я не смог найти город '
+                             f'{text_message}. Проверь пожалуйста '
+                             f'правильность написания.')
+            return
+        lat = response[0]['lat']
+        lon = response[0]['lon']
+        find_weather(message, lat, lon)
+    except Exception as error:
+        logging.error(f'Ошибка выполнения запроса {error}')
+        raise exceptions.RequestResponseError(error)
 
 def find_weather(message, lat, lon):
     """Функция получения прогноза погоды по долготе и широте."""
-    URL = (f'https://api.openweathermap.org/data/2.5/weather?lat={lat}'
-           f'&lon={lon}&lang=ru&appid={API_TOKEN}&units=metric')
-    weather_data = requests.get(URL).json()
-    city = weather_data['name']
-    country = weather_data['sys']['country']
-    temperature = weather_data['main']['temp']
-    feels_like = weather_data['main']['feels_like']
-    weather_icon = weather_data['weather'][0]['icon']
-    weather_desc = weather_data['weather'][0]['description']
-    humidity = weather_data['main']['humidity']
-    pressure = weather_data['main']['pressure']
-    wind_speed = weather_data['wind']['speed']
-    direction_wind = wind_direction(weather_data)
+    try:
+        url = URL_WEATHER.format(lat=lat, lon=lon, API_TOKEN=API_TOKEN)
+        weather_data = requests.get(url).json()
+        city = weather_data['name']
+        country = weather_data['sys']['country']
+        temperature = weather_data['main']['temp']
+        feels_like = weather_data['main']['feels_like']
+        weather_icon = weather_data['weather'][0]['icon']
+        weather_desc = weather_data['weather'][0]['description']
+        humidity = weather_data['main']['humidity']
+        pressure = weather_data['main']['pressure']
+        wind_speed = weather_data['wind']['speed']
+        direction_wind = wind_direction(weather_data)
 
-    weather_report = (
-        f'Погода в {city}, страна({country}):\n'
-        f'🌡️Температура: {temperature}°C (ощущается как {feels_like}°C)\n'
-        f' {WEATHER_EMOJIS[weather_icon]}Состояние: {weather_desc.capitalize()}\n'
-        f"💧 Влажность: {humidity}%\n"
-        f"🎚 Давление: {pressure} гПа\n"
-        f"🌬 Ветер: {wind_speed} м/с\n"
-        f'Направление ветра: {direction_wind}'
-    )
-    chat = message.chat
-    chat_id = chat.id
-    bot.send_message(chat_id=chat_id, text=weather_report)
+        weather_report = (
+            f'Текущая погода в {city}, страна({country}):\n'
+            f'🌡️Температура: {temperature}°C (ощущается как {feels_like}°C)\n'
+            f' {WEATHER_EMOJIS[weather_icon]}Состояние: {weather_desc.capitalize()}\n'
+            f"💧 Влажность: {humidity}%\n"
+            f"📉 Давление: {pressure} гПа\n"
+            f"💨 Ветер: {wind_speed} м/с\n"
+            f'🧭 Направление ветра: {direction_wind.capitalize()}\n'
+        )
+        chat = message.chat
+        chat_id = chat.id
+        bot.send_message(chat_id=chat_id, text=weather_report)
 
+    except Exception as error:
+        logging.error(f'Ошибка при получении погоды: {error}')
+        bot.send_message(message.chat.id, "⚠️ Не удалось получить погоду.")
 
 
 bot.polling(10)

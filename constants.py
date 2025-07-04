@@ -31,19 +31,12 @@ WEATHER_EMOJIS = {
 }
 
 DIRECTIONS_WIND = (
-    'северный','северо-восточный', 'восточный', 'юго-восточный', 'южный',
-    'юго-западный', 'западный', 'северо-западный',
+    'Северный','Северо-восточный', 'Восточный', 'Юго-восточный', 'Южный',
+    'Юго-западный', 'Западный', 'Северо-западный',
 )
 
-# 'main': {'temp': 20.17 'feels_like': 20.15 температура сикоку ощущ
-# 'wind': 'speed': 3 (м/c) скорость ветра
-# 'clouds': {'all': 0} облачность %
-# 'dt': 1751570699 время
-# 'name': 'Domodedovo' название города
-# "rain": {
-#       "1h": 2.73
-#    }, Осадки, мм/ч
-#
-# "rain": {
-#       "1h": 2.73
-#    }, Осадки, мм/ч
+URL_WEATHER =('https://api.openweathermap.org/data/2.5/weather?lat={lat}'
+              '&lon={lon}&lang=ru&appid={API_TOKEN}&units=metric')
+
+URL_GEO = ('http://api.openweathermap.org/geo/1.0/direct?q={text_message}'
+           '&appid={API_TOKEN}')
