@@ -5,8 +5,7 @@ import requests
 import telebot
 from dotenv import load_dotenv
 import exceptions
-from message import HI_MESSAGE, WEATHER_EMOJIS
-
+from message import HI_MESSAGE, WEATHER_EMOJIS, DIRECTIONS_WIND
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -38,6 +37,12 @@ def check_env():
         else:
             return True
 
+def wind_direction(weather_data):
+    """Функция получения направления ветра."""
+    deg_wind_speed = weather_data['wind']['deg']
+    direction = int((deg_wind_speed + 22.5) % 360 / 45)
+    direction_wind = DIRECTIONS_WIND[direction]
+    return direction_wind
 
 def check_availible_api():
     """Функция проверки доступности API."""
@@ -85,7 +90,7 @@ def find_weather(message, lat, lon):
     humidity = weather_data['main']['humidity']
     pressure = weather_data['main']['pressure']
     wind_speed = weather_data['wind']['speed']
-    deg_wind_speed = weather_data['wind']['deg']
+    direction_wind = wind_direction(weather_data)
 
     weather_report = (
         f'Погода в {city}, страна({country}):\n'
@@ -93,7 +98,8 @@ def find_weather(message, lat, lon):
         f' {WEATHER_EMOJIS[weather_icon]}Состояние: {weather_desc.capitalize()}\n'
         f"💧 Влажность: {humidity}%\n"
         f"🎚 Давление: {pressure} гПа\n"
-        f"🌬 Ветер: {wind_speed} м/с"
+        f"🌬 Ветер: {wind_speed} м/с\n"
+        f'Направление ветра: {direction_wind}'
     )
     chat = message.chat
     chat_id = chat.id
