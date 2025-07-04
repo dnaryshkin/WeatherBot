@@ -1,11 +1,16 @@
 import logging
 import os
+import sys
 
 import requests
 import telebot
 from dotenv import load_dotenv
+
 import exceptions
-from constants import HI_MESSAGE, WEATHER_EMOJIS, DIRECTIONS_WIND, URL_GEO, URL_WEATHER
+from constants import HI_MESSAGE, WEATHER_EMOJIS, URL_GEO, \
+    URL_WEATHER
+from utils import check_env, wind_direction
+
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -14,51 +19,6 @@ TELEGRAM_NAME = os.getenv('TELEGRAM_NAME')
 
 bot = telebot.TeleBot(token=TELEGRAM_TOKEN)
 
-def check_env():
-    """Функция проверки всех обязательных значений переменных в .env."""
-    secret_token = {
-        'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
-        'API_TOKEN': API_TOKEN,
-        'TELEGRAM_NAME': TELEGRAM_NAME,
-    }
-
-    unavailible_tokens = []
-
-    for token_name, token in secret_token.items():
-        if token is None:
-            unavailible_tokens.append(token_name)
-        if len(unavailible_tokens) > 0:
-            error_message = (
-                'Отсутствует обязательная переменная окружения:'
-                f'{", ".join(unavailible_tokens)}'
-            )
-            logging.error(error_message)
-            raise exceptions.TokenError(error_message)
-        else:
-            return True
-
-def wind_direction(weather_data):
-    """Функция получения направления ветра."""
-    deg_wind_speed = weather_data['wind']['deg']
-    direction = int((deg_wind_speed + 22.5) % 360 / 45)
-    direction_wind = DIRECTIONS_WIND[direction]
-    return direction_wind
-
-def check_availible_api():
-    """Функция проверки доступности API."""
-    try:
-        URL = 'http://api.openweathermap.org/'
-        response = requests.get(URL)
-        if response.status_code != HTTPStatus.OK:
-            message_error = f'Возникла ошибка: {response.status_code}'
-            logging.error(message_error)
-            raise exceptions.RequestResponseError(message_error)
-        else:
-            response = response.json()
-            return response
-    except Exception as error:
-        logging.error(f'Ошибка доступности API {error}')
-        raise exceptions.RequestResponseError(error)
 
 @bot.message_handler(commands=['start'])
 def say_hello(message):
@@ -66,6 +26,7 @@ def say_hello(message):
     chat = message.chat
     chat_id = chat.id
     bot.send_message(chat_id=chat_id, text=HI_MESSAGE)
+
 
 @bot.message_handler(content_types=['text'])
 def find_city(message):
@@ -78,6 +39,7 @@ def find_city(message):
     chat_id = chat.id
     find_geo(message, text_message)
 
+
 def find_geo(message, text_message):
     """Функция получения долготы и широты города из текста пользователя."""
     try:
@@ -85,9 +47,9 @@ def find_geo(message, text_message):
         response = requests.get(url).json()
         if not response:
             bot.send_message(message.chat.id,
-                             f'К сожалению я не смог найти город '
+                             f'😔К сожалению я не смог найти город '
                              f'{text_message}. Проверь пожалуйста '
-                             f'правильность написания.')
+                             f'правильность написания.😔')
             return
         lat = response[0]['lat']
         lon = response[0]['lon']
@@ -95,6 +57,7 @@ def find_geo(message, text_message):
     except Exception as error:
         logging.error(f'Ошибка выполнения запроса {error}')
         raise exceptions.RequestResponseError(error)
+
 
 def find_weather(message, lat, lon):
     """Функция получения прогноза погоды по долготе и широте."""
@@ -131,10 +94,28 @@ def find_weather(message, lat, lon):
 
 
 bot.polling(10)
+
+
 def main():
-    check_env()
-    pass
+    try:
+        check_env()
+    except exceptions.TokenError:
+        logging.critical('Работа бота остановлена!')
+        sys.exit()
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename='program.log',
+        encoding='utf-8',
+        filemode='w',
+        format=(
+            '%(asctime)s, '
+            '%(levelname)s, '
+            '%(message)s, '
+            'Название функции: %(funcName)s, '
+            'Номер строки: %(lineno)d'
+        )
+    )
     main()
