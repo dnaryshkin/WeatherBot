@@ -3,6 +3,3 @@ class RequestResponseError(Exception):
 
 class TokenError(Exception):
     """Ошибка обязательных переменных окружения."""
-
-class StatusHomeworkError(Exception):
-    """Ошибка статуса домашнего задания."""
