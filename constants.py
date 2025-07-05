@@ -35,8 +35,4 @@ DIRECTIONS_WIND = (
     'Юго-западный', 'Западный', 'Северо-западный',
 )
 
-URL_WEATHER =('https://api.openweathermap.org/data/2.5/weather?lat={lat}'
-              '&lon={lon}&lang=ru&appid={API_TOKEN}&units=metric')
-
-URL_GEO = ('http://api.openweathermap.org/geo/1.0/direct?q={text_message}'
-           '&appid={API_TOKEN}')
+URL_WEATHER = 'https://api.openweathermap.org/data/2.5/weather?q={city_name}&lang=ru&appid={API_key}&units=metric'

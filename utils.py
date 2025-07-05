@@ -6,7 +6,7 @@ import requests
 from dotenv import load_dotenv
 
 import exceptions
-from constants import DIRECTIONS_WIND
+from constants import DIRECTIONS_WIND, WEATHER_EMOJIS
 
 load_dotenv()
 
@@ -62,3 +62,29 @@ def check_availible_api():
     except Exception as error:
         logging.error(f'Ошибка доступности API {error}')
         raise exceptions.RequestResponseError(error)
+
+
+def report_weather_generation(response):
+    """Функция подготовки ответа с прогнозом погоды."""
+    city = response['name']
+    country = response['sys']['country']
+    temperature = response['main']['temp']
+    feels_like = response['main']['feels_like']
+    weather_icon = response['weather'][0]['icon']
+    weather_desc = response['weather'][0]['description']
+    humidity = response['main']['humidity']
+    pressure = response['main']['pressure']
+    wind_speed = response['wind']['speed']
+    direction_wind = wind_direction(response)
+
+    weather_report = (
+        f'Текущая погода в {city}, страна({country}):\n'
+        f'🌡️Температура: {temperature}°C (ощущается как {feels_like}°C)\n'
+        f'{WEATHER_EMOJIS[weather_icon]}Состояние: '
+        f'{weather_desc.capitalize()}\n'
+        f"💧 Влажность: {humidity}%\n"
+        f"📉 Давление: {pressure} гПа\n"
+        f"💨 Ветер: {wind_speed} м/с\n"
+        f'🧭 Направление ветра: {direction_wind.capitalize()}\n'
+    )
+    return weather_report
