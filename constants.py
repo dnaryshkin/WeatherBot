@@ -35,4 +35,8 @@ DIRECTIONS_WIND = (
     'Юго-западный', 'Западный', 'Северо-западный',
 )
 
-URL_WEATHER = 'https://api.openweathermap.org/data/2.5/weather?q={city_name}&lang=ru&appid={API_key}&units=metric'
+URL_WEATHER = ('https://api.openweathermap.org/data/2.5/weather?q={city_name}'
+               '&lang=ru&appid={API_key}&units=metric')
+
+ENDPOINT = ('https://api.openweathermap.org/data/2.5/weather?q=London'
+            '&appid={API_key}')

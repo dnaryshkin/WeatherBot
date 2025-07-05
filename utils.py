@@ -6,7 +6,7 @@ import requests
 from dotenv import load_dotenv
 
 import exceptions
-from constants import DIRECTIONS_WIND, WEATHER_EMOJIS
+from constants import DIRECTIONS_WIND, WEATHER_EMOJIS, ENDPOINT
 
 load_dotenv()
 
@@ -35,8 +35,9 @@ def check_env():
             )
             logging.error(error_message)
             raise exceptions.TokenError(error_message)
-        else:
-            return True
+
+        logging.info('Все обязательные переменные найдены!')
+        return True
 
 
 def wind_direction(weather_data):
@@ -50,14 +51,14 @@ def wind_direction(weather_data):
 def check_availible_api():
     """Функция проверки доступности API."""
     try:
-        URL = 'http://api.openweathermap.org/'
-        response = requests.get(URL)
+        response = requests.get(ENDPOINT.format(API_key=API_TOKEN))
         if response.status_code != HTTPStatus.OK:
             message_error = f'Возникла ошибка: {response.status_code}'
             logging.error(message_error)
             raise exceptions.RequestResponseError(message_error)
         else:
             response = response.json()
+            logging.info('API доступно!')
             return response
     except Exception as error:
         logging.error(f'Ошибка доступности API {error}')

@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 
 import exceptions
 from constants import HI_MESSAGE, WEATHER_EMOJIS, URL_WEATHER
-from utils import check_env, wind_direction, report_weather_generation
+from utils import check_env, wind_direction, report_weather_generation, \
+    check_availible_api
 
 load_dotenv()
 
@@ -33,14 +34,13 @@ def get_weather_data(message):
     text_message = message.text
     url = URL_WEATHER.format(city_name=text_message, API_key=API_TOKEN)
     chat_id = message.chat.id
-
     try:
         response = requests.get(url)
-
         if response.status_code == 404:
             bot.send_message(
                 chat_id=chat_id,
-                text='Я не знаю такой город. Проверь правильность написания.'
+                text='Я еще не знаю такой город😞.'
+                     'Проверь правильность написания.'
             )
         elif response.status_code == 200:
             response = response.json()
@@ -56,6 +56,7 @@ bot.polling(10)
 def main():
     try:
         check_env()
+        check_availible_api()
     except exceptions.TokenError:
         logging.critical('Работа бота остановлена!')
         sys.exit()
@@ -63,7 +64,7 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         filename='program.log',
         encoding='utf-8',
         filemode='w',
